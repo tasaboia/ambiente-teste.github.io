@@ -1,15 +1,10 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import Login from '../pages/login';
-import Register from '../pages/register';
+import { useAuth } from '../services/auth/auth';
+import PublicRoutes from './components/PublicRoutes';
+import PrivateRoutes from './components/PrivateRoutes';
 
 
-export default function PublicRoutes() {
-  return (
-    <Router>
-        <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="Register" element={<Register />} />
-        </Routes>
-  </Router>
-)}
+export default function Routes() {
+  const { user } = useAuth()
+  return user ? <PrivateRoutes/> : <PublicRoutes/>
+}

@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {Stack, Center, Image, HStack, Button, Checkbox, FormControl, ZStack, Spacer, Heading, Divider, Link, WarningOutlineIcon, Input} from "native-base";
 import {  Pressable } from "react-native";
 import { Formik } from "formik";
 import * as yup from 'yup';
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../services/auth/auth";
+import { LoginAPI } from "../../services/user/UserApi";
+import { storage } from "../../storage/storage";
+import { parse } from "react-native-svg";
 
 const initialValues = {
     userNameOrEmailAddress: '',
@@ -17,23 +21,46 @@ const loginValidationSchema = yup.object().shape({
   })
 
 export default function Login() {
-    const [erroNotification, setErroNotification] = useState(false);
-    let navigate = useNavigate();
+    
+    const [checkbox, setCheckbox] = useState(false)
+    const [email, setEmail] = useState(false)
+    const [password, setPassword] = useState(false)
+
+    const { login, isLoggingIn } = useAuth()
+    const [erroNotification, setErroNotification] = useState(false)
+    let navigate = useNavigate()
+    let emailStorage = storage.getEmail()
+    let passwordStorage = storage.getPassword()
 
   return(
         <Formik
             initialValues = {initialValues}
             validationSchema= {loginValidationSchema}
-            onSubmit={async () => {
+            onSubmit={async (values) => {
+
+                values.rememberClient = checkbox
+                
+                if(checkbox){
+                    storage.clearEmail()
+                    storage.clearPassword()
+
+                    storage.setEmail(values.userNameOrEmailAddress)
+                    storage.setPassword(values.password)
+
+                }
                 try{
-                    console.log("ok submit")
+                     login(values)
+                     if(isLoggingIn){
+                         console.log(isLoggingIn)
+                     }
+                    //  window.location.reload()
                 }catch(err){
                     setErroNotification(true);
                 }
             }} 
         >
             
-            {({ handleChange, handleBlur, values, errors, touched, setFieldValue, handleSubmit }) => (
+            {({ handleChange, handleBlur, errors, touched, setFieldValue, handleSubmit }) => (
                 <Stack direction="column" alignItems='center' bgColor="">
                       <Center mt={40}>
                         <Image   alt="logo"  w='250' h='100' 
@@ -42,7 +69,8 @@ export default function Login() {
                         />
                         <FormControl isInvalid={erroNotification}>  
                             <Stack  space={4} width={{base:300, lg:400}}>
-                                <Input h={45} placeholder="Digite seu e-mail" 
+                                <Input h={45} 
+                                    placeholder={"Digite seu e-mail" }
                                     onChangeText={handleChange('userNameOrEmailAddress')} 
                                     onBlur={handleBlur('userNameOrEmailAddress')}
                                 />
@@ -52,7 +80,8 @@ export default function Login() {
                                      </FormControl.HelperText>
                                 }
                                 <ZStack>
-                                <Input h={45} placeholder="Digite sua senha" 
+                                <Input h={45} 
+                                    placeholder= { passwordStorage ? passwordStorage : "Digite sua senha" }
                                     onChangeText={handleChange('password')} 
                                     onBlur={handleBlur('password')}
                                     type="password"
@@ -67,12 +96,12 @@ export default function Login() {
                                     bgColor="#EF9600"
                                     size="sm"
                                     value="rememberme"
-                                    onChange={() => { values.rememberClient = !values.rememberClient; } }>
+                                    onChange={() => setCheckbox(!checkbox)}>
                                     <Heading ml="2" size="sx" color="#EF9600" alignSelf="flex-end">Lembrar me</Heading>
                                 </Checkbox>
                                 <Spacer/>
                                 <Pressable>
-                                    <Heading size="sx" color="#EF9600" alignSelf="flex-end">Esqueceu sua senha?</Heading>
+                                    <Heading onPress={() => navigate("/ForgotPassword")} size="sx" color="#EF9600" alignSelf="flex-end">Esqueceu sua senha?</Heading>
                                 </Pressable>
                                 </HStack>
                                 {errors.password && touched.password &&
